@@ -25,6 +25,7 @@ export default class User extends Component {
     static propTypes = {
         navigation: PropTypes.shape({
             getParam: PropTypes.func,
+            navigate: PropTypes.func,
         }).isRequired,
     };
 
@@ -43,6 +44,8 @@ export default class User extends Component {
         const { navigation } = this.props;
         const user = navigation.getParam('user');
 
+        this.setState({ loading: true });
+
         const response = await api.get(`/users/${user.login}/starred`, {
             params: { page },
         });
@@ -56,10 +59,19 @@ export default class User extends Component {
 
     loadMore = () => {
         const { page } = this.state;
-
         const nextPage = page + 1;
 
         this.load(nextPage);
+    };
+
+    refreshList = () => {
+        this.setState({ stars: [], loading: true });
+        this.load();
+    };
+
+    handleNavigate = repository => {
+        const { navigation } = this.props;
+        navigation.navigate('Repository', { repository });
     };
 
     render() {
@@ -78,6 +90,8 @@ export default class User extends Component {
                     <ActivityIndicator color="#333" />
                 ) : (
                     <Stars
+                        onRefresh={this.refreshList}
+                        refreshing={loading}
                         onEndReachedThreshold={0.2}
                         onEndReached={this.loadMore}
                         data={stars}
@@ -88,7 +102,13 @@ export default class User extends Component {
                                     source={{ uri: item.owner.avatar_url }}
                                 />
                                 <Info>
-                                    <Title>{item.name}</Title>
+                                    <Title
+                                        onPress={() =>
+                                            this.handleNavigate(item)
+                                        }
+                                    >
+                                        {item.name}
+                                    </Title>
                                     <Author>{item.owner.login}</Author>
                                 </Info>
                             </Starred>
